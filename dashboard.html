@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ZeroClaw Smart Home v2 — Dashboard</title>
+<style>
+  :root {
+    --bg:       #0D1B2A;
+    --bg2:      #132338;
+    --navy:     #1B2E4A;
+    --teal:     #00B4D8;
+    --teal2:    #0096C7;
+    --accent:   #48CAE4;
+    --white:    #E0F4FF;
+    --muted:    #6B8FA3;
+    --green:    #06D6A0;
+    --orange:   #FFB703;
+    --red:      #EF476F;
+    --purple:   #7B2FBE;
+    --card-border: rgba(0,180,216,0.18);
+    --radius:   10px;
+    --font:     'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--white); font-family: var(--font); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 58px;
+    background: var(--bg2);
+    border-bottom: 2px solid var(--teal);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo-icon { width: 32px; height: 32px; background: var(--teal); border-radius: 7px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-text { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+  .logo-text span { color: var(--teal); }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .status-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); }
+  .status-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%;
+    animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .header-time { font-size: 12px; color: var(--muted); font-family: monospace; }
+  .refresh-btn { background: var(--navy); border: 1px solid var(--teal2); color: var(--teal);
+    padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all .2s; }
+  .refresh-btn:hover { background: var(--teal2); color: #fff; }
+
+  /* ── LAYOUT ── */
+  .page { display: flex; height: calc(100vh - 58px); overflow: hidden; }
+
+  /* ── SIDEBAR ── */
+  aside {
+    width: 200px; flex-shrink: 0;
+    background: var(--bg2); border-right: 1px solid var(--card-border);
+    display: flex; flex-direction: column; padding: 16px 0;
+    overflow-y: auto;
+  }
+  .nav-section { padding: 0 12px 8px; font-size: 10px; font-weight: 700;
+    color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+    cursor: pointer; font-size: 13px; color: var(--muted); transition: all .15s;
+    border-left: 3px solid transparent; }
+  .nav-item:hover { background: var(--navy); color: var(--white); }
+  .nav-item.active { background: rgba(0,180,216,0.1); color: var(--teal);
+    border-left-color: var(--teal); }
+  .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+  .nav-divider { height: 1px; background: var(--card-border); margin: 8px 12px; }
+
+  /* ── MAIN ── */
+  main { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+  /* ── SECTIONS ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── PAGE TITLE ── */
+  .page-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .page-subtitle { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+
+  /* ── STAT CARDS ── */
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--card-border); border-radius: var(--radius);
+    padding: 16px; position: relative; overflow: hidden;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .stat-card:hover { border-color: var(--teal); box-shadow: 0 4px 20px rgba(0,180,216,0.12); }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .stat-card.teal::before  { background: var(--teal); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.orange::before{ background: var(--orange); }
+  .stat-card.red::before   { background: var(--red); }
+  .stat-icon { font-size: 22px; margin-bottom: 8px; }
+  .stat-value { font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: var(--muted); }
+
+  /* ── 2-COL GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--bg2); border: 1px solid var(--card-border); border-radius: var(--radius);
+    padding: 16px; transition: border-color .2s;
+  }
+  .card:hover { border-color: rgba(0,180,216,0.35); }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .card-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+  .card-badge { font-size: 10px; background: rgba(0,180,216,0.15); color: var(--teal);
+    padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+
+  /* ── DEVICE GRID ── */
+  .device-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .device-item {
+    background: var(--navy); border: 1px solid var(--card-border); border-radius: 8px;
+    padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; transition: all .2s;
+  }
+  .device-item:hover { border-color: var(--teal2); background: rgba(0,150,199,0.1); }
+  .device-left { display: flex; align-items: center; gap: 10px; }
+  .device-ico { font-size: 18px; }
+  .device-name { font-size: 12px; font-weight: 600; }
+  .device-proto { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .toggle {
+    width: 38px; height: 20px; border-radius: 10px; cursor: pointer;
+    position: relative; transition: background .25s; border: none; outline: none;
+    background: #2a3f58;
+  }
+  .toggle::after { content: ''; position: absolute; width: 14px; height: 14px;
+    background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: left .25s; }
+  .toggle.on { background: var(--teal); }
+  .toggle.on::after { left: 21px; }
+
+  /* ── COMMAND BOX ── */
+  .cmd-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .cmd-input {
+    flex: 1; background: var(--navy); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 10px 14px; color: var(--white); font-size: 13px;
+    font-family: var(--font); outline: none; transition: border-color .2s;
+  }
+  .cmd-input:focus { border-color: var(--teal); }
+  .cmd-input::placeholder { color: var(--muted); }
+  .cmd-btn {
+    background: var(--teal); color: var(--bg); padding: 10px 20px;
+    border-radius: 8px; border: none; cursor: pointer; font-size: 13px;
+    font-weight: 700; transition: background .2s;
+  }
+  .cmd-btn:hover { background: var(--accent); }
+  .cmd-btn:active { transform: scale(0.97); }
+
+  .quick-cmds { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+  .quick-cmd { background: var(--navy); border: 1px solid var(--card-border);
+    color: var(--muted); padding: 5px 12px; border-radius: 6px; font-size: 11px;
+    cursor: pointer; transition: all .15s; }
+  .quick-cmd:hover { border-color: var(--teal2); color: var(--teal); }
+
+  .cmd-response {
+    background: var(--navy); border-radius: 8px; padding: 12px 14px; min-height: 54px;
+    font-family: monospace; font-size: 12px; border-left: 3px solid var(--teal);
+    color: var(--teal); white-space: pre-wrap; line-height: 1.6;
+  }
+  .cmd-response.thinking { color: var(--orange); border-left-color: var(--orange); }
+  .cmd-response.error { color: var(--red); border-left-color: var(--red); }
+
+  /* ── LOG TABLE ── */
+  .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .log-table th { background: var(--navy); color: var(--muted); padding: 8px 10px;
+    text-align: left; font-weight: 600; border-bottom: 1px solid var(--card-border); }
+  .log-table td { padding: 8px 10px; border-bottom: 1px solid rgba(27,46,74,0.5); }
+  .log-table tr:hover td { background: rgba(0,150,199,0.06); }
+  .log-source { display: inline-block; padding: 1px 7px; border-radius: 4px;
+    font-size: 10px; font-weight: 600; background: rgba(0,180,216,0.12); color: var(--teal); }
+  .log-result.ok { color: var(--green); }
+  .log-result.err { color: var(--red); }
+
+  /* ── RULES ── */
+  .rule-item { background: var(--navy); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 12px 14px; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between; }
+  .rule-name { font-size: 13px; font-weight: 600; }
+  .rule-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .rule-badge { font-size: 10px; padding: 2px 9px; border-radius: 5px; font-weight: 600; }
+  .rule-badge.active { background: rgba(6,214,160,0.15); color: var(--green); }
+  .del-btn { background: rgba(239,71,111,0.15); border: 1px solid rgba(239,71,111,0.3);
+    color: var(--red); padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    font-size: 11px; transition: all .2s; }
+  .del-btn:hover { background: var(--red); color: #fff; }
+
+  /* ── RULE FORM ── */
+  .rule-form { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+  .form-input, .form-select {
+    background: var(--navy); border: 1px solid var(--card-border); border-radius: 7px;
+    padding: 8px 10px; color: var(--white); font-size: 12px; width: 100%; outline: none;
+    transition: border-color .2s;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--teal); }
+  .form-select option { background: var(--navy); }
+
+  /* ── PROTOCOL CARDS ── */
+  .proto-card { background: var(--bg2); border-radius: var(--radius); padding: 16px;
+    border: 1px solid var(--card-border); }
+  .proto-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .proto-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 9px;
+    border-radius: 4px; margin-bottom: 12px; }
+  .proto-stat { display: flex; justify-content: space-between; font-size: 12px;
+    padding: 6px 0; border-bottom: 1px solid var(--card-border); color: var(--muted); }
+  .proto-stat:last-child { border-bottom: none; }
+  .proto-stat span:last-child { color: var(--white); font-weight: 600; }
+
+  /* ── CHART AREA ── */
+  .chart-box { height: 200px; display: flex; align-items: flex-end; gap: 8px;
+    padding: 10px 0 0; border-bottom: 1px solid var(--card-border); }
+  .chart-bar { flex: 1; border-radius: 4px 4px 0 0; min-width: 20px;
+    background: linear-gradient(to top, var(--teal2), var(--teal));
+    transition: height .5s ease; position: relative; }
+  .chart-bar:hover { background: linear-gradient(to top, var(--accent), var(--teal)); }
+  .chart-bar .bar-tip { position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+    font-size: 9px; color: var(--teal); white-space: nowrap; }
+  .chart-labels { display: flex; gap: 8px; padding-top: 6px; }
+  .chart-label { flex: 1; text-align: center; font-size: 9px; color: var(--muted); }
+
+  /* ── MISC ── */
+  .empty-state { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px;
+    border-radius: 4px; }
+  .tag.tuya { background: rgba(255,183,3,0.15); color: var(--orange); }
+  .tag.zigbee { background: rgba(6,214,160,0.15); color: var(--green); }
+  .tag.x10 { background: rgba(0,180,216,0.15); color: var(--teal); }
+
+  .scrollable { max-height: 340px; overflow-y: auto; }
+  .scrollable::-webkit-scrollbar { width: 4px; }
+  .scrollable::-webkit-scrollbar-track { background: transparent; }
+  .scrollable::-webkit-scrollbar-thumb { background: var(--navy); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-icon">🏠</div>
+    <div class="logo-text">Zero<span>Claw</span> Smart Home <span style="font-size:13px;font-weight:400;color:var(--muted);">v2</span></div>
+  </div>
+  <div class="header-right">
+    <div class="status-badge"><div class="status-dot"></div> System Online</div>
+    <div class="header-time" id="clock">--:--:--</div>
+    <button class="refresh-btn" onclick="refreshAll()">⟳ Refresh</button>
+  </div>
+</header>
+
+<div class="page">
+  <!-- Sidebar -->
+  <aside>
+    <div class="nav-section" style="margin-top:4px">Main</div>
+    <div class="nav-item active" onclick="showSection('overview')"><span class="nav-icon">📊</span> Overview</div>
+    <div class="nav-item" onclick="showSection('devices')"><span class="nav-icon">💡</span> Devices</div>
+    <div class="nav-item" onclick="showSection('command')"><span class="nav-icon">🤖</span> AI Command</div>
+    <div class="nav-divider"></div>
+    <div class="nav-section">Automation</div>
+    <div class="nav-item" onclick="showSection('rules')"><span class="nav-icon">⚡</span> Rules</div>
+    <div class="nav-item" onclick="showSection('logs')"><span class="nav-icon">📋</span> Logs</div>
+    <div class="nav-divider"></div>
+    <div class="nav-section">Protocols</div>
+    <div class="nav-item" onclick="showSection('protocols')"><span class="nav-icon">📡</span> Protocols</div>
+    <div class="nav-divider"></div>
+    <div style="padding:12px 16px; font-size:10px; color:var(--muted); margin-top:auto;">
+      API: <span style="color:var(--teal)">localhost:8000</span><br>
+      <span id="sidebar-status" style="color:var(--green)">● Connected</span>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main>
+
+    <!-- OVERVIEW -->
+    <div class="section active" id="sec-overview">
+      <div class="page-title">Overview</div>
+      <div class="page-subtitle">Real-time snapshot of your smart home</div>
+
+      <div class="stat-row">
+        <div class="stat-card teal">
+          <div class="stat-icon">💡</div>
+          <div class="stat-value" id="stat-devices">—</div>
+          <div class="stat-label">Total Devices</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">✅</div>
+          <div class="stat-value" id="stat-online">—</div>
+          <div class="stat-label">Devices ON</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-value" id="stat-rules">—</div>
+          <div class="stat-label">Active Rules</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">📋</div>
+          <div class="stat-value" id="stat-logs">—</div>
+          <div class="stat-label">Commands Logged</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot"></span> Device Activity (24h)</div>
+            <div class="card-badge">LIVE</div>
+          </div>
+          <div class="chart-box" id="activity-chart"></div>
+          <div class="chart-labels" id="chart-labels"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot" style="background:var(--green)"></span> Recent Commands</div>
+          </div>
+          <div class="scrollable" id="overview-logs"></div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--orange)"></span> Tuya Devices</div></div>
+          <div id="proto-tuya-count" style="font-size:28px;font-weight:700;color:var(--orange)">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Primary protocol</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--green)"></span> Zigbee Devices</div></div>
+          <div id="proto-zigbee-count" style="font-size:28px;font-weight:700;color:var(--green)">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Mesh network</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--teal)"></span> X10 Devices</div></div>
+          <div id="proto-x10-count" style="font-size:28px;font-weight:700;color:var(--teal)">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Legacy powerline</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEVICES -->
+    <div class="section" id="sec-devices">
+      <div class="page-title">Devices</div>
+      <div class="page-subtitle">Click a device to toggle its state</div>
+      <div class="card">
+        <div class="device-grid" id="device-grid">
+          <div class="empty-state">Loading devices…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI COMMAND -->
+    <div class="section" id="sec-command">
+      <div class="page-title">AI Command Center</div>
+      <div class="page-subtitle">Control your home with natural language via Claude AI</div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <div class="card-title"><span class="dot" style="background:var(--purple)"></span> Natural Language Interface</div>
+          <div class="card-badge" style="background:rgba(123,47,190,0.15);color:var(--purple)">CLAUDE AI</div>
+        </div>
+        <div class="cmd-row">
+          <input class="cmd-input" id="cmd-input" placeholder='Try: "Turn on living room lights" or "Lock all doors"' onkeydown="if(event.key==='Enter')sendCommand()"/>
+          <button class="cmd-btn" onclick="sendCommand()">▶ Send</button>
+        </div>
+        <div class="quick-cmds">
+          <div class="quick-cmd" onclick="setCmd('Turn on all lights')">Turn on all lights</div>
+          <div class="quick-cmd" onclick="setCmd('Turn off everything')">Turn off everything</div>
+          <div class="quick-cmd" onclick="setCmd('Lock the front door')">Lock front door</div>
+          <div class="quick-cmd" onclick="setCmd('Set thermostat to 22')">Set thermostat 22°</div>
+          <div class="quick-cmd" onclick="setCmd('Status report')">Status report</div>
+          <div class="quick-cmd" onclick="setCmd('Dim bedroom lights to 30%')">Dim bedroom 30%</div>
+          <div class="quick-cmd" onclick="setCmd('Good night mode')">Good night mode</div>
+          <div class="quick-cmd" onclick="setCmd('Turn on kitchen plug')">Kitchen plug on</div>
+        </div>
+        <div class="cmd-response" id="cmd-response">→ Ready. Type a command and press Send.</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="dot"></span> Command History</div></div>
+        <div class="scrollable" id="cmd-history">
+          <div class="empty-state">No commands yet this session</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RULES -->
+    <div class="section" id="sec-rules">
+      <div class="page-title">Automation Rules</div>
+      <div class="page-subtitle">Schedule device actions to run automatically</div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--orange)"></span> Add New Rule</div></div>
+        <div class="rule-form">
+          <div class="form-group">
+            <label>RULE NAME</label>
+            <input class="form-input" id="rule-name" placeholder="Morning lights"/>
+          </div>
+          <div class="form-group">
+            <label>TIME (HH:MM)</label>
+            <input class="form-input" id="rule-time" placeholder="07:30" type="time"/>
+          </div>
+          <div class="form-group">
+            <label>DEVICE</label>
+            <select class="form-select" id="rule-device">
+              <option value="living_room_light">Living Room Light</option>
+              <option value="bedroom_light">Bedroom Light</option>
+              <option value="kitchen_plug">Kitchen Plug</option>
+              <option value="front_door_lock">Front Door Lock</option>
+              <option value="thermostat">Thermostat</option>
+              <option value="outdoor_sensor">Outdoor Sensor</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ACTION</label>
+            <select class="form-select" id="rule-action">
+              <option value="on">Turn On</option>
+              <option value="off">Turn Off</option>
+              <option value="lock">Lock</option>
+              <option value="unlock">Unlock</option>
+              <option value="toggle">Toggle</option>
+            </select>
+          </div>
+          <button class="cmd-btn" style="white-space:nowrap" onclick="addRule()">+ Add Rule</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="dot" style="background:var(--green)"></span> Active Rules</div>
+          <div class="card-badge" id="rule-count-badge">0 rules</div>
+        </div>
+        <div id="rules-list"><div class="empty-state">No automation rules yet</div></div>
+      </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="section" id="sec-logs">
+      <div class="page-title">Command Logs</div>
+      <div class="page-subtitle">Full audit trail of all AI commands and device actions</div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="dot"></span> Recent Activity</div>
+          <button class="refresh-btn" onclick="loadLogs()">⟳ Refresh</button>
+        </div>
+        <div class="scrollable" style="max-height:500px">
+          <table class="log-table">
+            <thead><tr><th>#</th><th>Time</th><th>Source</th><th>Command</th><th>Device</th><th>Result</th></tr></thead>
+            <tbody id="log-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROTOCOLS -->
+    <div class="section" id="sec-protocols">
+      <div class="page-title">Protocol Status</div>
+      <div class="page-subtitle">Multi-protocol adapter health and configuration</div>
+      <div class="grid-3">
+        <div class="proto-card" style="border-top:3px solid var(--orange)">
+          <div class="proto-name" style="color:var(--orange)">⚡ Tuya</div>
+          <div class="proto-tag" style="background:rgba(255,183,3,0.15);color:var(--orange)">PRIMARY</div>
+          <div class="proto-stat"><span>Status</span><span style="color:var(--green)">● Active</span></div>
+          <div class="proto-stat"><span>Mode</span><span>Cloud + Local</span></div>
+          <div class="proto-stat"><span>Devices</span><span id="tuya-dev-count">—</span></div>
+          <div class="proto-stat"><span>Protocol</span><span>Tuya SDK v4</span></div>
+          <div class="proto-stat"><span>Endpoint</span><span style="font-family:monospace;font-size:10px">GET /status</span></div>
+        </div>
+        <div class="proto-card" style="border-top:3px solid var(--green)">
+          <div class="proto-name" style="color:var(--green)">📡 Zigbee</div>
+          <div class="proto-tag" style="background:rgba(6,214,160,0.15);color:var(--green)">MESH</div>
+          <div class="proto-stat"><span>Status</span><span id="zigbee-status" style="color:var(--teal)">Checking…</span></div>
+          <div class="proto-stat"><span>Mode</span><span>Coordinator</span></div>
+          <div class="proto-stat"><span>Devices</span><span id="zigbee-dev-count">—</span></div>
+          <div class="proto-stat"><span>Compatible</span><span>z2m / ZHA</span></div>
+          <div class="proto-stat"><span>Endpoint</span><span style="font-family:monospace;font-size:10px">GET /zigbee</span></div>
+        </div>
+        <div class="proto-card" style="border-top:3px solid var(--teal)">
+          <div class="proto-name" style="color:var(--teal)">🔌 X10</div>
+          <div class="proto-tag" style="background:rgba(0,180,216,0.15);color:var(--teal)">LEGACY</div>
+          <div class="proto-stat"><span>Status</span><span id="x10-status" style="color:var(--teal)">Checking…</span></div>
+          <div class="proto-stat"><span>Mode</span><span>Powerline</span></div>
+          <div class="proto-stat"><span>Devices</span><span id="x10-dev-count">—</span></div>
+          <div class="proto-stat"><span>Standard</span><span>House/Unit codes</span></div>
+          <div class="proto-stat"><span>Endpoint</span><span style="font-family:monospace;font-size:10px">GET /x10</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="dot"></span> API Endpoints</div></div>
+        <table class="log-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/</td><td style="color:var(--muted)">Health check</td></tr>
+            <tr><td><span class="tag tuya">POST</span></td><td style="font-family:monospace">/command</td><td style="color:var(--muted)">AI natural language command</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/status</td><td style="color:var(--muted)">Device state map</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/devices</td><td style="color:var(--muted)">Full device list with protocols</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/logs</td><td style="color:var(--muted)">Last 50 command log entries</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/rules</td><td style="color:var(--muted)">All active automation rules</td></tr>
+            <tr><td><span class="tag tuya">POST</span></td><td style="font-family:monospace">/rules/add</td><td style="color:var(--muted)">Create automation rule</td></tr>
+            <tr><td><span class="tag" style="background:rgba(239,71,111,0.15);color:var(--red)">DELETE</span></td><td style="font-family:monospace">/rules/{id}</td><td style="color:var(--muted)">Remove automation rule</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/x10</td><td style="color:var(--muted)">X10 controller status</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/zigbee</td><td style="color:var(--muted)">Zigbee coordinator info</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let cmdHistory = [];
+let allDevices = [];
+
+// ── CLOCK ──
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── NAVIGATION ──
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id === 'logs') loadLogs();
+  if (id === 'rules') loadRules();
+  if (id === 'protocols') loadProtocols();
+}
+
+// ── API HELPERS ──
+async function apiFetch(path, opts = {}) {
+  try {
+    const r = await fetch(API + path, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+    return await r.json();
+  } catch { return null; }
+}
+
+// ── DEVICES ──
+async function loadDevices() {
+  const data = await apiFetch('/devices');
+  if (!data) return;
+  allDevices = data;
+  renderDeviceGrid(data);
+  updateProtoCounts(data);
+  updateStatCards(data);
+}
+
+function updateProtoCounts(devices) {
+  const tuya   = devices.filter(d => d.protocol?.toLowerCase() === 'tuya').length;
+  const zigbee = devices.filter(d => d.protocol?.toLowerCase() === 'zigbee').length;
+  const x10    = devices.filter(d => d.protocol?.toLowerCase() === 'x10').length;
+  document.getElementById('proto-tuya-count').textContent   = tuya   || '—';
+  document.getElementById('proto-zigbee-count').textContent = zigbee || '—';
+  document.getElementById('proto-x10-count').textContent    = x10    || '—';
+  if (document.getElementById('tuya-dev-count'))   document.getElementById('tuya-dev-count').textContent   = tuya;
+  if (document.getElementById('zigbee-dev-count')) document.getElementById('zigbee-dev-count').textContent = zigbee;
+  if (document.getElementById('x10-dev-count'))    document.getElementById('x10-dev-count').textContent    = x10;
+}
+
+const DEVICE_ICONS = {
+  light: '💡', lamp: '💡', bulb: '💡',
+  plug: '🔌', outlet: '🔌', socket: '🔌',
+  lock: '🔒', door: '🚪',
+  thermostat: '🌡️', temp: '🌡️',
+  sensor: '📡', outdoor: '📡',
+  camera: '📷', fan: '🌀',
+  default: '📱'
+};
+function getDeviceIcon(name) {
+  const n = (name || '').toLowerCase();
+  for (const [k, v] of Object.entries(DEVICE_ICONS)) {
+    if (n.includes(k)) return v;
+  }
+  return DEVICE_ICONS.default;
+}
+
+function renderDeviceGrid(devices) {
+  const grid = document.getElementById('device-grid');
+  if (!devices || !devices.length) { grid.innerHTML = '<div class="empty-state">No devices available — is the API running?</div>'; return; }
+  grid.innerHTML = devices.map(d => {
+    const on = ['on','true','locked','active','open','running'].includes(String(d.state).toLowerCase());
+    const icon = getDeviceIcon(d.name || d.id);
+    const proto = (d.protocol || 'tuya').toLowerCase();
+    return `<div class="device-item" onclick="toggleDevice('${d.id}', ${on})">
+      <div class="device-left">
+        <div class="device-ico">${icon}</div>
+        <div>
+          <div class="device-name">${d.name || d.id}</div>
+          <div class="device-proto"><span class="tag ${proto}">${proto.toUpperCase()}</span></div>
+        </div>
+      </div>
+      <button class="toggle ${on ? 'on' : ''}" title="Toggle ${d.name}"></button>
+    </div>`;
+  }).join('');
+}
+
+async function toggleDevice(id, currentlyOn) {
+  const action = currentlyOn ? 'off' : 'on';
+  const res = document.getElementById('cmd-response');
+  if (res) { res.className = 'cmd-response thinking'; res.textContent = `→ Sending: turn ${action} ${id}…`; }
+  const data = await apiFetch('/command', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: 'dashboard', message: `turn ${action} ${id}` })
+  });
+  if (res && data) { res.className = 'cmd-response'; res.textContent = `→ ${data.response || 'Done'}`; }
+  setTimeout(loadDevices, 600);
+}
+
+function updateStatCards(devices) {
+  const total = devices.length;
+  const online = devices.filter(d => ['on','true','locked','active'].includes(String(d.state).toLowerCase())).length;
+  document.getElementById('stat-devices').textContent = total;
+  document.getElementById('stat-online').textContent = online;
+}
+
+// ── LOGS ──
+async function loadLogs() {
+  const data = await apiFetch('/logs');
+  if (!data || !data.logs) return;
+  const logs = data.logs;
+  document.getElementById('stat-logs').textContent = logs.length;
+
+  // Overview mini-logs
+  const overviewEl = document.getElementById('overview-logs');
+  if (overviewEl) {
+    overviewEl.innerHTML = logs.slice(0, 8).map(l =>
+      `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid rgba(27,46,74,0.4);align-items:flex-start">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:1px">${formatTime(l.timestamp)}</span>
+        <span style="font-size:12px;flex:1;color:var(--white)">${l.user_input || l.ai_action || '—'}</span>
+        <span style="font-size:10px;color:${l.result?.toLowerCase().includes('err') ? 'var(--red)' : 'var(--green)'}">${l.result?.slice(0,8) || 'ok'}</span>
+      </div>`
+    ).join('') || '<div class="empty-state">No logs yet</div>';
+  }
+
+  // Full log table
+  const tbody = document.getElementById('log-tbody');
+  if (tbody) {
+    tbody.innerHTML = logs.map(l =>
+      `<tr>
+        <td style="color:var(--muted)">#${l.id}</td>
+        <td style="font-family:monospace;color:var(--muted)">${formatTime(l.timestamp)}</td>
+        <td><span class="log-source">${l.source || '—'}</span></td>
+        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.user_input || '—'}</td>
+        <td style="color:var(--teal);font-family:monospace">${l.device || '—'}</td>
+        <td class="log-result ${(l.result || '').toLowerCase().includes('err') ? 'err' : 'ok'}">${l.result || '—'}</td>
+      </tr>`
+    ).join('') || '<tr><td colspan="6" class="empty-state">No logs</td></tr>';
+  }
+
+  renderActivityChart(logs);
+}
+
+function formatTime(ts) {
+  if (!ts) return '—';
+  try { return new Date(ts).toLocaleTimeString(); } catch { return ts.slice(11, 19) || ts; }
+}
+
+// ── ACTIVITY CHART (hourly) ──
+function renderActivityChart(logs) {
+  const hours = Array(24).fill(0);
+  logs.forEach(l => {
+    if (l.timestamp) {
+      const h = new Date(l.timestamp).getHours();
+      if (!isNaN(h)) hours[h]++;
+    }
+  });
+  const recent = hours.slice(Math.max(0, new Date().getHours() - 11), new Date().getHours() + 1);
+  const max = Math.max(...recent, 1);
+  const labels = [];
+  for (let i = Math.max(0, new Date().getHours() - 11); i <= new Date().getHours(); i++) {
+    labels.push(i + ':00');
+  }
+  const chartEl = document.getElementById('activity-chart');
+  const labelsEl = document.getElementById('chart-labels');
+  if (!chartEl) return;
+  chartEl.innerHTML = recent.map((v, i) =>
+    `<div class="chart-bar" style="height:${Math.max(4, Math.round((v/max)*180))}px">
+      ${v > 0 ? `<span class="bar-tip">${v}</span>` : ''}
+    </div>`
+  ).join('');
+  if (labelsEl) labelsEl.innerHTML = labels.map((l, i) => `<div class="chart-label">${i % 3 === 0 ? l : ''}</div>`).join('');
+}
+
+// ── RULES ──
+async function loadRules() {
+  const data = await apiFetch('/rules');
+  if (!data || !data.rules) return;
+  const rules = data.rules;
+  document.getElementById('stat-rules').textContent = rules.length;
+  document.getElementById('rule-count-badge').textContent = rules.length + ' rules';
+
+  const el = document.getElementById('rules-list');
+  el.innerHTML = rules.length === 0
+    ? '<div class="empty-state">No automation rules yet. Add one above.</div>'
+    : rules.map(r => {
+        let action = r.action;
+        try { const j = JSON.parse(r.action); action = `${j.command || ''} ${j.device || ''}`; } catch {}
+        return `<div class="rule-item">
+          <div>
+            <div class="rule-name">⚡ ${r.name}</div>
+            <div class="rule-meta">🕐 ${r.trigger_value}  •  ${action}  •  Created ${formatTime(r.created_at)}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="rule-badge active">ACTIVE</span>
+            <button class="del-btn" onclick="deleteRule(${r.id})">Delete</button>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+async function addRule() {
+  const name   = document.getElementById('rule-name').value.trim();
+  const time   = document.getElementById('rule-time').value;
+  const device = document.getElementById('rule-device').value;
+  const action = document.getElementById('rule-action').value;
+  if (!name || !time) { alert('Please fill in rule name and time.'); return; }
+  await apiFetch('/rules/add', { method: 'POST', body: JSON.stringify({ name, time, device, action }) });
+  document.getElementById('rule-name').value = '';
+  document.getElementById('rule-time').value = '';
+  loadRules();
+}
+
+async function deleteRule(id) {
+  if (!confirm('Delete this rule?')) return;
+  await apiFetch('/rules/' + id, { method: 'DELETE' });
+  loadRules();
+}
+
+// ── COMMAND ──
+function setCmd(text) { document.getElementById('cmd-input').value = text; }
+
+async function sendCommand() {
+  const input = document.getElementById('cmd-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const res = document.getElementById('cmd-response');
+  res.className = 'cmd-response thinking';
+  res.textContent = '→ Sending to AI…';
+
+  const data = await apiFetch('/command', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: 'dashboard', message: msg })
+  });
+
+  if (data) {
+    res.className = 'cmd-response';
+    res.textContent = '→ ' + (data.response || JSON.stringify(data));
+    cmdHistory.unshift({ msg, resp: data.response, time: new Date().toLocaleTimeString() });
+    renderCmdHistory();
+  } else {
+    res.className = 'cmd-response error';
+    res.textContent = '→ Error: Could not reach API at ' + API + '. Is the server running?';
+  }
+  input.value = '';
+  setTimeout(loadDevices, 800);
+}
+
+function renderCmdHistory() {
+  const el = document.getElementById('cmd-history');
+  el.innerHTML = cmdHistory.slice(0, 20).map(c =>
+    `<div style="padding:8px 0;border-bottom:1px solid rgba(27,46,74,0.4)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--white)">"${c.msg}"</span>
+        <span style="font-size:10px;color:var(--muted)">${c.time}</span>
+      </div>
+      <div style="font-size:11px;color:var(--teal);font-family:monospace">→ ${c.resp || '—'}</div>
+    </div>`
+  ).join('') || '<div class="empty-state">No commands yet</div>';
+}
+
+// ── PROTOCOLS ──
+async function loadProtocols() {
+  const [x10, zigbee] = await Promise.all([apiFetch('/x10'), apiFetch('/zigbee')]);
+  if (x10) document.getElementById('x10-status').textContent = '● ' + (x10.info?.status || 'Active');
+  if (zigbee) document.getElementById('zigbee-status').textContent = '● ' + (zigbee.info?.status || 'Active');
+}
+
+// ── REFRESH ALL ──
+async function refreshAll() {
+  await Promise.all([loadDevices(), loadLogs()]);
+}
+
+// ── INIT ──
+refreshAll();
+setInterval(refreshAll, 15000);
+</script>
+</body>
+</html>
