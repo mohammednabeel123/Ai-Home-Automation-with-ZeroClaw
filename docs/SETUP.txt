@@ -1,0 +1,81 @@
+ZeroClaw Smart Home v2 — Setup Guide
+
+=====================================
+
+We will install Python 3.10 or higher on the computer
+
+Then we will open Command Prompt / Terminal and go to project folder
+
+cd smart_home_v2
+
+We will create a virtual environment
+
+python -m venv venv
+
+Then we will activate the virtual environment
+
+Windows:
+
+venv\Scripts\activate
+
+Linux / Mac / Raspberry Pi:
+
+source venv/bin/activate
+
+We will install required packages
+
+pip install -r requirements.txt
+
+We will create the environment file
+
+cp .env.example .env
+
+Then we will open .env file and add API keys if needed
+
+We will run the project using
+
+python main.py
+
+After running, the system will start:
+
+API server
+database system
+automation engine
+device simulator
+
+We will open the dashboard in browser
+
+http://localhost:8000/dashboard
+
+We will open API documentation for testing
+
+http://localhost:8000/docs
+API Keys (if needed)
+We will use Groq API from: https://console.groq.com
+We will add GROQ_API_KEY inside .env file
+We will create Telegram bot using @BotFather on Telegram (optional)
+Optional Features
+Telegram bot
+
+We will add Telegram bot integration later so we can control smart home devices from chat.
+
+python telegram/telebot.py
+Voice assistant
+
+We will also add voice assistant later so we can control devices using voice commands.
+
+python voice_interface.py
+Notes
+We will always activate virtual environment before running the project
+Database will be created automatically on first run
+All devices are currently simulated (no real hardware connected yet)
+The system works fully offline except AI API calls
+Future Improvements
+
+We will improve this project later by adding:
+
+We will add full Telegram bot integration for real-time control
+We will build Android mobile application for remote control
+We will connect real IoT devices instead of simulation
+We will improve AI agent using Groq for smarter automation
+We will make the system more intelligent with better natural language understanding

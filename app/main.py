@@ -12,7 +12,7 @@ from app.hardware.fan import turn_on as fan_on_hw, turn_off as fan_off_hw
 from app.hardware.light import turn_on as light_on_hw, turn_off as light_off_hw
 
 
-# TEMP: old modules commented until moved properly
+
 # from app.services.agent import process
 # from app.services.rules_engine import start_scheduler, load_rules
 # from app.protocols.x10_control import x10_status
