@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ZeroClaw Smart Home v2 — Dashboard</title>
+<script src="/static/script.js" defer></script>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-icon">🏠</div>
+    <div class="logo-text">Zero<span>Claw</span> Smart Home <span style="font-size:13px;font-weight:400;color:var(--muted);">v2</span></div>
+  </div>
+  <div class="header-right">
+    <div class="status-badge"><div class="status-dot"></div> System Online</div>
+    <div class="header-time" id="clock">--:--:--</div>
+    <button class="refresh-btn" onclick="refreshAll()">⟳ Refresh</button>
+  </div>
+</header>
+
+<div class="page">
+  <!-- Sidebar -->
+  <aside>
+    <div class="nav-section" style="margin-top:4px">Main</div>
+    <div class="nav-item active" onclick="showSection('overview')"><span class="nav-icon">📊</span> Overview</div>
+    <div class="nav-item" onclick="showSection('devices')"><span class="nav-icon">💡</span> Devices</div>
+    <div class="nav-item" onclick="showSection('command')"><span class="nav-icon">🤖</span> AI Command</div>
+    <div class="nav-divider"></div>
+    <div class="nav-section">Automation</div>
+    <div class="nav-item" onclick="showSection('rules')"><span class="nav-icon">⚡</span> Rules</div>
+    <div class="nav-item" onclick="showSection('logs')"><span class="nav-icon">📋</span> Logs</div>
+    <div class="nav-divider"></div>
+    <div class="nav-section">Protocols</div>
+    <div class="nav-item" onclick="showSection('protocols')"><span class="nav-icon">📡</span> Protocols</div>
+    <div class="nav-divider"></div>
+    <div style="padding:12px 16px; font-size:10px; color:var(--muted); margin-top:auto;">
+      API: <span style="color:var(--teal)">localhost:8000</span><br>
+      <span id="sidebar-status" style="color:var(--green)">● Connected</span>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main>
+
+    <!-- OVERVIEW -->
+    <div class="section active" id="sec-overview">
+      <div class="page-title">Overview</div>
+      <div class="page-subtitle">Real-time snapshot of your smart home</div>
+
+      <div class="stat-row">
+        <div class="stat-card teal">
+          <div class="stat-icon">💡</div>
+          <div class="stat-value" id="stat-devices">—</div>
+          <div class="stat-label">Total Devices</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">✅</div>
+          <div class="stat-value" id="stat-online">—</div>
+          <div class="stat-label">Devices ON</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-value" id="stat-rules">—</div>
+          <div class="stat-label">Active Rules</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">📋</div>
+          <div class="stat-value" id="stat-logs">—</div>
+          <div class="stat-label">Commands Logged</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot"></span> Device Activity (24h)</div>
+            <div class="card-badge">LIVE</div>
+          </div>
+          <div class="chart-box" id="activity-chart"></div>
+          <div class="chart-labels" id="chart-labels"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot" style="background:var(--green)"></span> Recent Commands</div>
+          </div>
+          <div class="scrollable" id="overview-logs"></div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--orange)"></span> Tuya Devices</div></div>
+          <div id="proto-tuya-count" style="font-size:28px;font-weight:700;color:var(--orange)">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Primary protocol</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--green)"></span> Zigbee Devices</div></div>
+          <div id="proto-zigbee-count" style="font-size:28px;font-weight:700;color:var(--green)">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Mesh network</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--teal)"></span> X10 Devices</div></div>
+          <div id="proto-x10-count" style="font-size:28px;font-weight:700;color:var(--teal)">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Legacy powerline</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEVICES -->
+    <div class="section" id="sec-devices">
+      <div class="page-title">Devices</div>
+      <div class="page-subtitle">Click a device to toggle its state</div>
+      <div class="card">
+        <div class="device-grid" id="device-grid">
+          <div class="empty-state">Loading devices…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI COMMAND -->
+    <div class="section" id="sec-command">
+      <div class="page-title">AI Command Center</div>
+      <div class="page-subtitle">Control your home with natural language via Claude AI</div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <div class="card-title"><span class="dot" style="background:var(--purple)"></span> Natural Language Interface</div>
+          <div class="card-badge" style="background:rgba(123,47,190,0.15);color:var(--purple)">CLAUDE AI</div>
+        </div>
+        <div class="cmd-row">
+          <input class="cmd-input" id="cmd-input" placeholder='Try: "Turn on living room lights" or "Lock all doors"' onkeydown="if(event.key==='Enter')sendCommand()"/>
+          <button class="cmd-btn" onclick="sendCommand()">▶ Send</button>
+        </div>
+        <div class="quick-cmds">
+          <div class="quick-cmd" onclick="setCmd('Turn on all lights')">Turn on all lights</div>
+          <div class="quick-cmd" onclick="setCmd('Turn off everything')">Turn off everything</div>
+          <div class="quick-cmd" onclick="setCmd('Lock the front door')">Lock front door</div>
+          <div class="quick-cmd" onclick="setCmd('Set thermostat to 22')">Set thermostat 22°</div>
+          <div class="quick-cmd" onclick="setCmd('Status report')">Status report</div>
+          <div class="quick-cmd" onclick="setCmd('Dim bedroom lights to 30%')">Dim bedroom 30%</div>
+          <div class="quick-cmd" onclick="setCmd('Good night mode')">Good night mode</div>
+          <div class="quick-cmd" onclick="setCmd('Turn on kitchen plug')">Kitchen plug on</div>
+        </div>
+        <div class="cmd-response" id="cmd-response">→ Ready. Type a command and press Send.</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="dot"></span> Command History</div></div>
+        <div class="scrollable" id="cmd-history">
+          <div class="empty-state">No commands yet this session</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RULES -->
+    <div class="section" id="sec-rules">
+      <div class="page-title">Automation Rules</div>
+      <div class="page-subtitle">Schedule device actions to run automatically</div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--orange)"></span> Add New Rule</div></div>
+        <div class="rule-form">
+          <div class="form-group">
+            <label>RULE NAME</label>
+            <input class="form-input" id="rule-name" placeholder="Morning lights"/>
+          </div>
+          <div class="form-group">
+            <label>TIME (HH:MM)</label>
+            <input class="form-input" id="rule-time" placeholder="07:30" type="time"/>
+          </div>
+          <div class="form-group">
+            <label>DEVICE</label>
+            <select  class="form-select" id="rule-device">
+              <option value="living_room_light">Living Room Light</option>
+              <option value="bedroom_light">Bedroom Light</option>
+              <option value="kitchen_plug">Kitchen Plug</option>
+              <option value="front_door_lock">Front Door Lock</option>
+              <option value="thermostat">Thermostat</option>
+              <option value="outdoor_sensor">Outdoor Sensor</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ACTION</label>
+            <select class="form-select" id="rule-action">
+              <option value="on">Turn On</option>
+              <option value="off">Turn Off</option>
+              <option value="lock">Lock</option>
+              <option value="unlock">Unlock</option>
+              <option value="toggle">Toggle</option>
+            </select>
+          </div>
+          <button class="cmd-btn" style="white-space:nowrap" onclick="addRule()">+ Add Rule</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="dot" style="background:var(--green)"></span> Active Rules</div>
+          <div class="card-badge" id="rule-count-badge">0 rules</div>
+        </div>
+        <div id="rules-list"><div class="empty-state">No automation rules yet</div></div>
+      </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="section" id="sec-logs">
+      <div class="page-title">Command Logs</div>
+      <div class="page-subtitle">Full audit trail of all AI commands and device actions</div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="dot"></span> Recent Activity</div>
+          <button class="refresh-btn" onclick="loadLogs()">⟳ Refresh</button>
+        </div>
+        <div class="scrollable" style="max-height:500px">
+          <table class="log-table">
+            <thead><tr><th>#</th><th>Time</th><th>Source</th><th>Command</th><th>Device</th><th>Result</th></tr></thead>
+            <tbody id="log-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROTOCOLS -->
+    <div class="section" id="sec-protocols">
+      <div class="page-title">Protocol Status</div>
+      <div class="page-subtitle">Multi-protocol adapter health and configuration</div>
+      <div class="grid-3">
+        <div class="proto-card" style="border-top:3px solid var(--orange)">
+          <div class="proto-name" style="color:var(--orange)">⚡ Tuya</div>
+          <div class="proto-tag" style="background:rgba(255,183,3,0.15);color:var(--orange)">PRIMARY</div>
+          <div class="proto-stat"><span>Status</span><span style="color:var(--green)">● Active</span></div>
+          <div class="proto-stat"><span>Mode</span><span>Cloud + Local</span></div>
+          <div class="proto-stat"><span>Devices</span><span id="tuya-dev-count">—</span></div>
+          <div class="proto-stat"><span>Protocol</span><span>Tuya SDK v4</span></div>
+          <div class="proto-stat"><span>Endpoint</span><span style="font-family:monospace;font-size:10px">GET /status</span></div>
+        </div>
+        <div class="proto-card" style="border-top:3px solid var(--green)">
+          <div class="proto-name" style="color:var(--green)">📡 Zigbee</div>
+          <div class="proto-tag" style="background:rgba(6,214,160,0.15);color:var(--green)">MESH</div>
+          <div class="proto-stat"><span>Status</span><span id="zigbee-status" style="color:var(--teal)">Checking…</span></div>
+          <div class="proto-stat"><span>Mode</span><span>Coordinator</span></div>
+          <div class="proto-stat"><span>Devices</span><span id="zigbee-dev-count">—</span></div>
+          <div class="proto-stat"><span>Compatible</span><span>z2m / ZHA</span></div>
+          <div class="proto-stat"><span>Endpoint</span><span style="font-family:monospace;font-size:10px">GET /zigbee</span></div>
+        </div>
+        <div class="proto-card" style="border-top:3px solid var(--teal)">
+          <div class="proto-name" style="color:var(--teal)">🔌 X10</div>
+          <div class="proto-tag" style="background:rgba(0,180,216,0.15);color:var(--teal)">LEGACY</div>
+          <div class="proto-stat"><span>Status</span><span id="x10-status" style="color:var(--teal)">Checking…</span></div>
+          <div class="proto-stat"><span>Mode</span><span>Powerline</span></div>
+          <div class="proto-stat"><span>Devices</span><span id="x10-dev-count">—</span></div>
+          <div class="proto-stat"><span>Standard</span><span>House/Unit codes</span></div>
+          <div class="proto-stat"><span>Endpoint</span><span style="font-family:monospace;font-size:10px">GET /x10</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="dot"></span> API Endpoints</div></div>
+        <table class="log-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/</td><td style="color:var(--muted)">Health check</td></tr>
+            <tr><td><span class="tag tuya">POST</span></td><td style="font-family:monospace">/command</td><td style="color:var(--muted)">AI natural language command</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/status</td><td style="color:var(--muted)">Device state map</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/devices</td><td style="color:var(--muted)">Full device list with protocols</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/logs</td><td style="color:var(--muted)">Last 50 command log entries</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/rules</td><td style="color:var(--muted)">All active automation rules</td></tr>
+            <tr><td><span class="tag tuya">POST</span></td><td style="font-family:monospace">/rules/add</td><td style="color:var(--muted)">Create automation rule</td></tr>
+            <tr><td><span class="tag" style="background:rgba(239,71,111,0.15);color:var(--red)">DELETE</span></td><td style="font-family:monospace">/rules/{id}</td><td style="color:var(--muted)">Remove automation rule</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/x10</td><td style="color:var(--muted)">X10 controller status</td></tr>
+            <tr><td><span class="tag zigbee">GET</span></td><td style="font-family:monospace">/zigbee</td><td style="color:var(--muted)">Zigbee coordinator info</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+
+</script>
+</body>
+</html>
