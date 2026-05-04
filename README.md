@@ -1,9 +1,3 @@
-This is strong — just needs **formatting + structure** so it actually looks professional on GitHub.
-
-Right now it’s all one block. I’ll fix it into a **clean, polished README** you can paste directly 👇
-
----
-
 # 🧠 ZeroClaw Smart Home v2
 
 An AI-powered smart home system that allows users to control real devices using natural language, automation rules, and a real-time dashboard.
