@@ -1,4 +1,4 @@
-# 🧠 ZeroClaw Smart Home v2
+# 🧠Ai Home Automation with ZeroClaw Smart Home
 
 An AI-powered smart home system that allows users to control real devices using natural language, automation rules, and a real-time dashboard.
 
